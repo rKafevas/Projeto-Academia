@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório de Inadimplentes - Sistema Academia{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: #6a1b9a; margin: 0;">⚠️ Clientes Inadimplentes</h2>
+        <a href="{{ url_for('listar_clientes') }}" class="btn btn-small" style="background-color: #f0f0f0; color: #333;">← Voltar para a lista</a>
+    </div>
+
+    {% if inadimplentes %}
+        <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+            <strong>Total de Inadimplentes:</strong> {{ inadimplentes|length }}
+        </div>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Telefone</th>
+                    <th>Vencimento</th>
+                    <th>Meses em Atraso</th>
+                    <th>Valor Devido</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inadimplentes %}
+                    {% set mensagem_whatsapp = "Olá, " + item.cliente.nome + "! Tudo bem? A mensalidade da academia está em atraso. O valor devido é de R$ " + "%.2f"|format(item.valor_devido) + ". Por favor, entre em contato para regularizar. Obrigado! " %}
+                    <tr>
+                        <td><strong>{{ item.cliente.nome }}</strong></td>
+                        <td>{{ item.cliente.telefone }}</td>
+                        <td>Todo dia {{ item.cliente.dia_vencimento }}</td>
+                        <td>
+                            <span style="background-color: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-weight: bold;">
+                                {{ item.meses_atraso }}
+                            </span>
+                        </td>
+                        <td>
+                            <span style="font-weight: bold; color: #721c24;">
+                                R$ {{ "%.2f"|format(item.valor_devido) }}
+                            </span>
+                        </td>
+                        <td style="white-space: nowrap;">
+                            <button class="btn btn-small btn-success" 
+                                    onclick="abrirModalPagamento({{ item.cliente.id }}, '{{ item.cliente.nome }}', {{ item.cliente.valor_mensalidade }})">
+                                ✅ Registrar pagamento
+                            </button>
+                            <a href="https://wa.me/55{{ item.cliente.telefone | replace('(', '') | replace(')', '') | replace(' ', '') | replace('-', '') }}?text={{ mensagem_whatsapp | urlencode }}" class="btn btn-small btn-whatsapp" style="margin-left: 5px;">
+                                <i class="fab fa-whatsapp"></i> Cobrar
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-success" style="text-align: center;">
+            Nenhum cliente inadimplente encontrado.
+        </div>
+    {% endif %}
+</div>
+
+<div id="modal-pagamento" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="fecharModalPagamento()">&times;</span>
+        <h3 style="color: #6a1b9a;">✅ Registrar Pagamento</h3>
+        <p>Preencha os detalhes do pagamento para o cliente <strong id="modal-nome-cliente"></strong>.</p>
+        <hr>
+        <form id="form-pagamento" method="POST" action="">
+            <input type="hidden" name="cliente_id" id="modal-cliente-id">
+            
+            <div style="margin-bottom: 15px;">
+                <label for="data_pagamento" style="font-weight: bold;">Data do Pagamento:</label>
+                <input type="date" id="data_pagamento" name="data_pagamento" value="{{ hoje.strftime('%Y-%m-%d') }}" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label for="valor_pago" style="font-weight: bold;">Valor Pago (R$):</label>
+                <input type="number" id="valor_pago" name="valor_pago" step="0.01" required>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-small" onclick="fecharModalPagamento()" style="background-color: #f0f0f0; color: #333;">Cancelar</button>
+                <button type="submit" class="btn btn-small btn-success">Confirmar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Estilos para o Modal de Pagamento */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); padding-top: 60px; }
+.modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+.close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
+.btn-whatsapp { background-color: #25D366; color: white; }
+.btn-whatsapp:hover { background-color: #128C7E; }
+</style>
+
+<script>
+function abrirModalPagamento(clienteId, clienteNome, valorMensalidade) {
+    document.getElementById('modal-cliente-id').value = clienteId;
+    document.getElementById('modal-nome-cliente').textContent = clienteNome;
+    document.getElementById('valor_pago').value = valorMensalidade.toFixed(2);
+    document.getElementById('form-pagamento').action = "/registrar_pagamento_manual/" + clienteId;
+    document.getElementById('modal-pagamento').style.display = 'block';
+}
+
+function fecharModalPagamento() {
+    document.getElementById('modal-pagamento').style.display = 'none';
+}
+
+// Fechar modal clicando fora da área de conteúdo
+window.onclick = function(event) {
+    const modalPagamento = document.getElementById('modal-pagamento');
+    if (event.target == modalPagamento) {
+        fecharModalPagamento();
+    }
+}
+</script>
+{% endblock %}

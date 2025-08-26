@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastrar Cliente - Sistema Academia{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 20px;">👤 Cadastrar Novo Cliente</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'warning' }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="{{ url_for('cadastrar_cliente') }}">
+        <div class="form-group">
+            <label for="nome">Nome Completo:</label>
+            <input type="text" id="nome" name="nome" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="telefone">Telefone:</label>
+            <input type="text" id="telefone" name="telefone" placeholder="(81) 99999-9999" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="valor_mensalidade">Valor da Mensalidade (R$):</label>
+            <input type="number" id="valor_mensalidade" name="valor_mensalidade" step="0.01" min="0" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="dia_vencimento">Dia do Vencimento:</label>
+            <select id="dia_vencimento" name="dia_vencimento" required>
+                <option value="">Selecione o dia...</option>
+                {% for dia in range(1, 32) %}
+                <option value="{{ dia }}">{{ dia }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="text-center">
+            <button type="submit" class="btn">Cadastrar Cliente</button>
+            <a href="{{ url_for('dashboard') }}" class="btn" style="background: #6c757d; margin-left: 10px;">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <h3 style="color: #667eea;">💡 Dicas:</h3>
+    <ul>
+        <li>O **telefone** deve ser no formato (XX) XXXXX-XXXX.</li>
+        <li>O sistema irá validar os campos antes de salvar.</li>
+    </ul>
+</div>
+{% endblock %}

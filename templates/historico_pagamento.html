@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico de Pagamento - {{ cliente.nome }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #6a1b9a; margin-bottom: 20px;">📚 Histórico de Pagamento</h2>
+    <h3 style="margin-bottom: 15px;">Cliente: <strong>{{ cliente.nome }}</strong></h3>
+    
+    <div style="margin-bottom: 20px;">
+        <p><strong>Valor Mensalidade:</strong> R$ {{ "%.2f"|format(cliente.valor_mensalidade) }}</p>
+        <p><strong>Dia de Vencimento:</strong> {{ cliente.dia_vencimento }}</p>
+    </div>
+
+    {% if pagamentos %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Data do Pagamento</th>
+                <th>Valor Pago</th>
+                <th>Mês de Referência</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for pagamento in pagamentos %}
+            <tr>
+                <td>{{ pagamento.data_pagamento.strftime('%d/%m/%Y') }}</td>
+                <td>R$ {{ "%.2f"|format(pagamento.valor_pago) }}</td>
+                <td>{{ pagamento.mes_referencia }}/{{ pagamento.ano_referencia }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-warning" style="text-align: center;">
+        <i class="fas fa-exclamation-triangle"></i> Nenhum pagamento encontrado para este cliente.
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('listar_clientes') }}" class="btn" style="background-color: #f0f0f0; color: #333;">
+            <i class="fas fa-arrow-left"></i> Voltar para a lista de clientes
+        </a>
+    </div>
+</div>
+{% endblock %}
