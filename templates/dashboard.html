@@ -3,8 +3,9 @@
 {% block title %}Dashboard - Sistema Academia{% endblock %}
 
 {% block content %}
+
 <div class="card">
-    <h2 style="color: #667eea; margin-bottom: 20px;">📊 Dashboard - Hoje</h2>
+    <h2 style="color: #667eea; margin-bottom: 20px; text-align: center;">📊 Dashboard</h2>
     
     <div class="stats-grid">
         <div class="stat-card">
@@ -47,175 +48,14 @@
     </div>
 </div>
 
-{% if clientes_pagos %}
-<div class="card">
-    <h3 style="color: #28a745; margin-bottom: 15px;">✅ Clientes que Pagaram este Mês ({{ clientes_pagos|length }})</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Telefone</th>
-                <th>Valor</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for cliente in clientes_pagos %}
-            <tr>
-                <td><strong>{{ cliente.nome }}</strong></td>
-                <td>{{ cliente.telefone }}</td>
-                <td>R$ {{ "%.2f"|format(cliente.valor_mensalidade) }}</td>
-                <td><span style="color: #28a745; font-weight: bold;">✅ Pago</span></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Botões rápidos -->
+<div style="margin: 15px 0; text-align: center;">
+    <a href="{{ url_for('listar_clientes') }}" class="btn btn-primary me-2">
+        <i class="fas fa-users"></i> Todos os Clientes
+    </a>
+    <a href="{{ url_for('listar_clientes', filtro='inadimplentes') }}" class="btn btn-warning">
+        <i class="fas fa-exclamation-triangle"></i> Clientes Inadimplentes
+    </a>
 </div>
-{% endif %}
-
-{% if clientes_atrasados %}
-<div class="card">
-    <h3 style="color: #dc3545; margin-bottom: 15px;">🗓️ Pagamentos de {{ nome_mes }}</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nome</th>
-                <th>Meses</th>
-                <th>Valor Devido</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for item in clientes_atrasados %}
-            <tr style="background-color: #fff5f5;">
-                <td><strong>{{ item.cliente.nome }}</strong></td>
-                <td>{{ item.meses_atraso }}</td>
-                <td>R$ {{ "%.2f"|format(item.valor_devido) }}</td>
-                <td>
-                    <button class="btn btn-small btn-success" 
-                            onclick="abrirModalPagamento({{ item.cliente.id }}, '{{ item.cliente.nome }}', {{ item.cliente.valor_mensalidade }})">
-                        ✅ Registrar Pagamento
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% else %}
-<div class="card" style="text-align: center; background: #d4edda; border: 1px solid #c3e6cb;">
-    <h3 style="color: #28a745;">🎉 Excelente!</h3>
-    <p style="color: #155724; font-size: 1.1em;">Nenhum cliente está em atraso no momento!</p>
-</div>
-{% endif %}
-
-<div id="modal-pagamento" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="fecharModalPagamento()">&times;</span>
-        <h3 style="color: #667eea;">Registrar Pagamento</h3>
-        <p>Cliente: <strong id="cliente-nome-modal"></strong></p>
-        
-        <form id="form-pagamento" method="POST">
-            <div class="form-group">
-                <label for="data_pagamento">Data do Pagamento:</label>
-                <input type="date" id="data_pagamento" name="data_pagamento" class="form-control" required>
-            </div>
-            
-            <div class="form-group">
-                <label for="valor_pago">Valor Pago (R$):</label>
-                <input type="number" id="valor_pago" name="valor_pago" step="0.01" min="0" class="form-control" required>
-            </div>
-            
-            <div style="text-align: right; margin-top: 20px;">
-                <button type="submit" class="btn btn-success">Confirmar</button>
-                <button type="button" class="btn" style="background: #6c757d; margin-left: 10px;" onclick="fecharModalPagamento()">Cancelar</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<style>
-/* Estilos para o Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0,0,0,0.4);
-    padding-top: 60px;
-}
-
-.modal-content {
-    background-color: #fff;
-    margin: 5% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 90%;
-    max-width: 500px;
-    border-radius: 10px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.form-group {
-    margin-bottom: 15px;
-}
-
-.form-control {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box;
-}
-
-</style>
-
-<script>
-    function abrirModalPagamento(clienteId, clienteNome, valorMensalidade) {
-        document.getElementById('cliente-nome-modal').textContent = clienteNome;
-        document.getElementById('valor_pago').value = valorMensalidade;
-        
-        const form = document.getElementById('form-pagamento');
-        form.action = `/registrar_pagamento_manual/${clienteId}`;
-        
-        document.getElementById('modal-pagamento').style.display = 'block';
-
-        // Define a data atual como valor padrão
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        document.getElementById('data_pagamento').value = `${yyyy}-${mm}-${dd}`;
-    }
-
-    function fecharModalPagamento() {
-        document.getElementById('modal-pagamento').style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        const modal = document.getElementById('modal-pagamento');
-        if (event.target == modal) {
-            fecharModalPagamento();
-        }
-    }
-</script>
 
 {% endblock %}

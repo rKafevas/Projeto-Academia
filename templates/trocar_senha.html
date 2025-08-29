@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Trocar Senha{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 30px auto; padding: 20px;">
+    <h2 style="color: #6a1b9a; margin-bottom: 20px; text-align: center;">🔒 Trocar Senha</h2>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            {{ form.senha_atual.label }}<br>
+            {{ form.senha_atual(class="form-control") }}
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            {{ form.nova_senha.label }}<br>
+            {{ form.nova_senha(class="form-control") }}
+        </div>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+            {{ form.confirmar.label }}<br>
+            {{ form.confirmar(class="form-control") }}
+        </div>
+
+        <div style="text-align: center;">
+            {{ form.submit(class="btn", style="background-color:#6a1b9a;color:#fff;padding:10px 25px;") }}
+            <a href="{{ url_for('dashboard') }}" class="btn" style="margin-left:10px;background-color:#f0f0f0;color:#333;padding:10px 25px;">🔙 Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

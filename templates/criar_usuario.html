@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Usuário - Sistema Academia{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #6a1b9a; margin-bottom: 20px;"><i class="fas fa-user-plus"></i> Criar Novo Usuário</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'warning' }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+            {{ form.username.label }}:
+            {{ form.username(class="form-control") }}
+            {% if form.username.errors %}
+                <small style="color: #dc3545;">{{ form.username.errors[0] }}</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.nome_completo.label }}:
+            {{ form.nome_completo(class="form-control") }}
+            {% if form.nome_completo.errors %}
+                <small style="color: #dc3545;">{{ form.nome_completo.errors[0] }}</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.email.label }}:
+            {{ form.email(class="form-control") }}
+            {% if form.email.errors %}
+                <small style="color: #dc3545;">{{ form.email.errors[0] }}</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.tipo_permissao.label }}:
+            {{ form.tipo_permissao(class="form-control") }}
+            {% if form.tipo_permissao.errors %}
+                <small style="color: #dc3545;">{{ form.tipo_permissao.errors[0] }}</small>
+            {% endif %}
+            <small style="color: #666; font-size: 0.9em;">
+                Colaborador: acesso limitado | Administrador: acesso completo
+            </small>
+        </div>
+
+        <div class="form-group">
+            {{ form.senha.label }}:
+            {{ form.senha(class="form-control") }}
+            {% if form.senha.errors %}
+                <small style="color: #dc3545;">{{ form.senha.errors[0] }}</small>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            {{ form.confirmar_senha.label }}:
+            {{ form.confirmar_senha(class="form-control") }}
+            {% if form.confirmar_senha.errors %}
+                <small style="color: #dc3545;">{{ form.confirmar_senha.errors[0] }}</small>
+            {% endif %}
+        </div>
+
+        <div class="text-center" style="margin-top: 15px;">
+            {{ form.submit(class="btn") }}
+            <a href="{{ url_for('gerenciar_usuarios') }}" class="btn" style="background: #6c757d; margin-left: 10px;">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -46,7 +46,10 @@
                                     onclick="abrirModalPagamento({{ item.cliente.id }}, '{{ item.cliente.nome }}', {{ item.cliente.valor_mensalidade }})">
                                 ✅ Registrar pagamento
                             </button>
-                            <a href="https://wa.me/55{{ item.cliente.telefone | replace('(', '') | replace(')', '') | replace(' ', '') | replace('-', '') }}?text={{ mensagem_whatsapp | urlencode }}" class="btn btn-small btn-whatsapp" style="margin-left: 5px;">
+                            {% set telefone_formatado = item.cliente.telefone | replace('(', '') | replace(')', '') | replace(' ', '') | replace('-', '') %}
+                            {% set mensagem_whatsapp = "Olá, " + item.cliente.nome + "! Tudo bem? A mensalidade da academia está em atraso. O valor devido é de R$ " + "%.2f"|format(item.valor_devido) + ". Por favor, entre em contato para regularizar. Obrigado!" %}
+                            <a href="https://wa.me/55{{ telefone_formatado }}?text={{ mensagem_whatsapp | urlencode }}" 
+                                class="btn btn-small btn-whatsapp" style="margin-left: 5px;">
                                 <i class="fab fa-whatsapp"></i> Cobrar
                             </a>
                         </td>
@@ -68,6 +71,7 @@
         <p>Preencha os detalhes do pagamento para o cliente <strong id="modal-nome-cliente"></strong>.</p>
         <hr>
         <form id="form-pagamento" method="POST" action="">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="cliente_id" id="modal-cliente-id">
             
             <div style="margin-bottom: 15px;">

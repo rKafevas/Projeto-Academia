@@ -4,16 +4,18 @@
 
 {% block content %}
 
-<div class="card">
+<div class="card" style="padding: 20px; border-radius: 10px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h2 style="color: #6a1b9a; margin: 0;">👥 Lista Completa de Clientes</h2>
-        <a href="{{ url_for('cadastrar_cliente') }}" class="btn">+ Novo Cliente</a>
+        <a href="{{ url_for('cadastrar_cliente') }}" class="btn" style="background: #6a1b9a; color: #fff;">+ Novo Cliente</a>
+
+
     </div>
 
     <form method="GET" action="{{ url_for('listar_clientes') }}" style="margin-bottom: 20px;">
         <div style="display: flex; gap: 10px;">
-            <input type="text" name="q" placeholder="Pesquisar por nome..." value="{{ search_query }}" style="flex-grow: 1;">
-            <button type="submit" class="btn btn-small">🔍 Buscar</button>
+            <input type="text" name="q" placeholder="Pesquisar por nome..." value="{{ search_query }}" style="flex-grow: 1; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+            <button type="submit" class="btn btn-small" style="background: #6a1b9a; color: #fff;">🔍 Buscar</button>
             <a href="{{ url_for('listar_clientes') }}" class="btn btn-small" style="background-color: #f0f0f0; color: #333;">Limpar</a>
         </div>
     </form>
@@ -29,80 +31,92 @@
     {% endwith %}
 
     {% if clientes_info %}
-        <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
+        <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #17a2b8;">
             <strong>📊 Resumo:</strong> {{ clientes_info|length }} clientes encontrados
         </div>
-        
+
         <div style="margin-bottom: 20px;">
-            <button onclick="filtrarPor('todos')" class="btn btn-small" id="btn-todos">Todos</button>
-            <button onclick="filtrarPor('em-dia')" class="btn btn-small btn-success" id="btn-em-dia">Em Dia</button>
-            <button onclick="filtrarPor('em-atraso')" class="btn btn-small btn-warning" id="btn-em-atraso">Atrasados</button>
-            <button onclick="filtrarPor('aguardando')" class="btn btn-small" id="btn-aguardando">Aguardando</button>
+            <a href="{{ url_for('listar_clientes', status='todos') }}" class="btn btn-small" style="background: #9c27b0; color: #fff;">Mostrar Todos</a>
+            <a href="{{ url_for('listar_clientes', status='Em dia') }}" class="btn btn-small" style="background: #28a745; color: #fff;">Adimplentes</a>
+            <a href="{{ url_for('listar_clientes', status='Aguardando') }}" class="btn btn-small" style="background: #6c757d; color: #fff;">Aguardando</a>
+            <a href="{{ url_for('listar_clientes', status='Em atraso') }}" class="btn btn-small" style="background: #dc3545; color: #fff;">Inadimplentes</a>
+            <a href="{{ url_for('listar_clientes', status='inativos') }}" class="btn btn-small" style="background: #ff9800; color: #fff;">Inativos</a>
         </div>
-        
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Telefone</th>
-                    <th>Vencimento</th>
-                    <th>Último Pagamento</th>
-                    <th>Status</th>
-                    <th style="text-align: left;">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in clientes_info %}
-                {% set status_class = item.status|replace(' ', '-')|lower %}
-                <tr data-status="{{ status_class }}" class="status-{{ status_class }}">
-                    <td><strong>{{ item.cliente.nome }}</strong></td>
-                    <td>{{ item.cliente.telefone }}</td>
-                    <td>Todo dia {{ item.cliente.dia_vencimento }}</td>
-                    <td>
-                        {% if item.ultimo_pagamento %}
-                            {{ item.ultimo_pagamento.data_pagamento.strftime('%d/%m/%Y') }}
-                        {% else %}
-                            Nenhum
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="status-{{ status_class }}">{{ item.status }}</span>
-                    </td>
-                    <td style="white-space: nowrap; text-align: right;">
-                        <button class="btn btn-small btn-success" 
-                                onclick="abrirModalPagamento({{ item.cliente.id }}, '{{ item.cliente.nome }}', {{ item.cliente.valor_mensalidade }})">
-                            ✅ Pagar
-                        </button>
-                        <a href="{{ url_for('editar_cliente', cliente_id=item.cliente.id) }}" class="btn btn-small btn-info" style="margin-left: 5px;">
-                            ✏️ Editar
-                        </a>
-                        <a href="{{ url_for('historico_pagamento', cliente_id=item.cliente.id) }}" class="btn btn-small btn-primary" style="margin-left: 5px;">
-                            📚 Histórico
-                        </a>
-                        <form action="{{ url_for('deletar_cliente', cliente_id=item.cliente.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja desativar este cliente? Esta ação não pode ser desfeita!');">
-                            <button type="submit" class="btn btn-small btn-danger" style="margin-left: 5px;">
-                                ❌ Desativar
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
+
+
+        <div style="overflow-x: auto; border-radius: 10px; border: 1px solid #ddd;">
+            <table class="table table-striped" id="clientes-table" style="width: 100%; border-collapse: separate; border-spacing: 0;">
+                <thead style="background: #6a1b9a; color: #fff;">
+                    <tr>
+                        <th>Nome</th>
+                        <th>Telefone</th>
+                        <th>Mensalidade</th>
+                        <th>Vencimento</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in clientes_info %}
+                    <tr data-status="{{ item.status }}" style="border-bottom: 1px solid #ddd;">
+                        <td>
+                            <strong>{{ item.cliente.nome }}</strong>
+                            {% if not item.cliente.ativo %}
+                                <span style="color: #6c757d; font-size: 0.8em;">(Inativo)</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.cliente.telefone }}</td>
+                        <td>R$ {{ "%.2f"|format(item.cliente.valor_mensalidade) }}</td>
+                        <td>{{ item.cliente.dia_vencimento }}</td>
+                        <td>
+                            {% if item.status == 'Em dia' %}
+                                <span style="color: green; font-weight: bold;"><i class="fas fa-check-circle"></i> Em dia</span>
+                            {% elif item.status == 'Aguardando' %}
+                                <span style="color: orange; font-weight: bold;"><i class="fas fa-clock"></i> Aguardando</span>
+                            {% else %}
+                                <span style="color: red; font-weight: bold;"><i class="fas fa-times-circle"></i> Em atraso</span>
+                            {% endif %}
+                        </td>
+                        <td style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <a href="{{ url_for('historico_pagamento', cliente_id=item.cliente.id) }}" class="btn btn-small" style="background-color: #007bff; color: #fff;"><i class="fas fa-history"></i></a>
+                            <a href="{{ url_for('editar_cliente', cliente_id=item.cliente.id) }}" class="btn btn-small" style="background-color: #ffc107; color: #fff;"><i class="fas fa-edit"></i></a>
+                            {% if current_user.is_admin() %}
+                                {% if item.cliente.ativo %}
+                                <form action="{{ url_for('deletar_cliente', cliente_id=item.cliente.id) }}" method="POST" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-small" style="background: #dc3545; color: #fff;" onclick="return confirm('Deseja desativar este cliente?')"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('ativar_cliente', cliente_id=item.cliente.id) }}" method="POST" style="display: inline;">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-small" style="background-color: #28a745; color: #fff;" onclick="return confirm('Deseja reativar este cliente?')"><i class="fas fa-redo"></i></button>
+                                </form>
+                                {% endif %}
+                            {% endif %}
+                            <button onclick="abrirModalPagamento({{ item.cliente.id }}, '{{ item.cliente.nome }}', {{ item.cliente.valor_mensalidade }})" class="btn btn-small" style="background-color: #20c997; color: #fff;"><i class="fas fa-money-bill-wave"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% else %}
-        <div class="alert alert-info" style="text-align: center;">
-            Nenhum cliente encontrado.
+        <div class="alert alert-warning" style="text-align: center;">
+            <i class="fas fa-exclamation-triangle"></i> Nenhum cliente encontrado.
         </div>
     {% endif %}
+
 </div>
 
 <div id="modal-pagamento" class="modal">
     <div class="modal-content">
         <span class="close" onclick="fecharModalPagamento()">&times;</span>
-        <h3 id="pagamento-titulo" style="color: #6a1b9a; margin-bottom: 15px;"></h3>
-        <form id="form-pagamento" method="POST">
-            <input type="hidden" id="modal-cliente-id">
+        <h3 id="pagamento-titulo">Registrar Pagamento</h3>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <form id="form-pagamento" method="POST" action="{{ url_for('registrar_pagamento_manual', cliente_id=0) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" id="modal-cliente-id" name="cliente_id">
+            <p style="margin-bottom: 15px;">Cliente: <strong id="cliente-nome-modal"></strong></p>
             <div class="form-group">
                 <label for="data_pagamento">Data do Pagamento:</label>
                 <input type="date" id="data_pagamento" name="data_pagamento" class="form-control" required>
@@ -111,51 +125,56 @@
                 <label for="valor_pago">Valor Pago (R$):</label>
                 <input type="number" id="valor_pago" name="valor_pago" step="0.01" min="0" class="form-control" required>
             </div>
-            <div style="text-align: right; margin-top: 20px;">
-                <button type="submit" class="btn btn-success">Confirmar</button>
-                <button type="button" class="btn" style="background: #6c757d; margin-left: 10px;" onclick="fecharModalPagamento()">Cancelar</button>
+            <div class="form-group">
+                <label for="mes_referencia">Mês de Referência:</label>
+                <input type="number" id="mes_referencia" name="mes_referencia" min="1" max="12" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="ano_referencia">Ano de Referência:</label>
+                <input type="number" id="ano_referencia" name="ano_referencia" min="2020" max="2100" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="observacoes">Observações (opcional):</label>
+                <textarea id="observacoes" name="observacoes" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="text-center">
+                <button type="submit" class="btn" style="background: #6a1b9a; color: #fff;">Registrar Pagamento</button>
             </div>
         </form>
     </div>
 </div>
 
 <style>
-/* Estilos para o Modal de Detalhes e Status */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); padding-top: 60px; }
-.modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-.close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
-.close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
-.btn-whatsapp { background-color: #25D366; color: white; }
-.btn-whatsapp:hover { background-color: #128C7E; }
+    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); padding-top: 60px; }
+    .modal-content { background-color: #fff; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; }
+    .close:hover, .close:focus { color: black; text-decoration: none; cursor: pointer; }
+    .form-group { margin-bottom: 15px; }
+    .form-control { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
 
-.status-em-dia { background-color: #d4edda; color: #155724; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
-.status-em-atraso { background-color: #f8d7da; color: #721c24; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
-.status-aguardando { background-color: #e2e3e5; color: #383d41; padding: 4px 8px; border-radius: 12px; font-weight: bold; }
-
+    .btn { padding: 8px 12px; border: none; border-radius: 5px; cursor: pointer; }
+    .btn:hover { opacity: 0.9; }
+    .btn-small { padding: 5px 8px; font-size: 0.85em; }
 </style>
 
 <script>
 function filtrarPor(tipo) {
-    const rows = document.querySelectorAll('tbody tr');
-    const buttons = document.querySelectorAll('[id^="btn-"]');
+    const table = document.getElementById('clientes-table');
+    if (!table) return;
+
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
     
-    buttons.forEach(btn => {
-        btn.style.opacity = '0.6';
-    });
+    // Altera a opacidade dos botões
+    const buttons = document.querySelectorAll('div[style*="margin-bottom: 20px;"] .btn-small');
+    buttons.forEach(btn => btn.style.opacity = '0.6');
+    const selectedBtn = document.querySelector(`button[onclick="filtrarPor('${tipo}')"]`);
+    if (selectedBtn) selectedBtn.style.opacity = '1';
     
-    const activeBtn = document.getElementById('btn-' + tipo);
-    if (activeBtn) {
-        activeBtn.style.opacity = '1';
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        row.style.display = (tipo === 'todos' || row.getAttribute('data-status').toLowerCase() === tipo.toLowerCase()) ? '' : 'none';
+
     }
-    
-    rows.forEach(row => {
-        if (tipo === 'todos') {
-            row.style.display = '';
-        } else {
-            const status = row.getAttribute('data-status');
-            row.style.display = status === tipo ? '' : 'none';
-        }
-    });
 }
 
 function abrirModalPagamento(clienteId, clienteNome, valorMensalidade) {
@@ -165,24 +184,19 @@ function abrirModalPagamento(clienteId, clienteNome, valorMensalidade) {
     document.getElementById('form-pagamento').action = "/registrar_pagamento_manual/" + clienteId;
     document.getElementById('modal-pagamento').style.display = 'block';
     
-    // Define a data atual como valor padrão
     const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    document.getElementById('data_pagamento').value = `${yyyy}-${mm}-${dd}`;
+    document.getElementById('data_pagamento').value = today.toISOString().split('T')[0];
+    document.getElementById('mes_referencia').value = today.getMonth() + 1;
+    document.getElementById('ano_referencia').value = today.getFullYear();
 }
 
 function fecharModalPagamento() {
     document.getElementById('modal-pagamento').style.display = 'none';
 }
 
-// Fechar modal clicando fora da área de conteúdo
 window.onclick = function(event) {
-    const modalPagamento = document.getElementById('modal-pagamento');
-    if (event.target == modalPagamento) {
-        fecharModalPagamento();
-    }
-}
+    const modal = document.getElementById('modal-pagamento');
+    if (event.target == modal) modal.style.display = "none";
+};
 </script>
 {% endblock %}
