@@ -6,6 +6,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime, date, timedelta
 from dateutil.relativedelta import relativedelta
+import pymysql
 import random
 import re
 import os
@@ -15,7 +16,7 @@ from faker import Faker
 from flask_wtf import CSRFProtect
 from forms import CriarUsuarioForm  
 from forms import TrocarSenhaForm
-import pymysql
+
 
 # Carrega variáveis do .env
 load_dotenv()
@@ -24,21 +25,19 @@ load_dotenv()
 pymysql.install_as_MySQLdb()
 
 # Configuração da aplicação
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'chave_padrao_para_dev')
 
-# Configuração do banco de dados
-if os.getenv('FLASK_ENV') == 'production':
-    # Configuração para produção (PythonAnywhere)
-    app.config['SQLALCHEMY_DATABASE_URI'] = (
-        f"mysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
-        f"{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}?charset=utf8mb4"
-    )
-else:
-    # Configuração para desenvolvimento local (pode manter SQLite ou usar MySQL local)
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI', 'sqlite:///academia.db')
-
+# Conexão com MySQL local (Docker)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URI')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
 
 # Configurações de cookie de sessão (segurança)
 app.config.update(
@@ -48,12 +47,10 @@ app.config.update(
 )
 
 # Inicializações
-db = SQLAlchemy(app)
 fake = Faker('pt_BR')
 csrf = CSRFProtect(app)
 
 # --- Limiter simples em memória (apenas para desenvolvimento) ---
-# Estrutura: failed_logins[key] = {'count': int, 'first_attempt': datetime, 'locked_until': datetime or None}
 failed_logins = {}
 MAX_ATTEMPTS = 5
 LOCK_MINUTES = 15
@@ -738,7 +735,7 @@ def criar_usuario_admin_inicial():
         print("   ⚠️  IMPORTANTE: Altere a senha após o primeiro login!")
 
 def inicializar_dados():
-    """Gera dados de exemplo (mantive a lógica, com cuidado)."""
+    """Gera dados de exemplo"""
     if Cliente.query.count() > 0:
         return
 
@@ -802,12 +799,21 @@ def inicializar_dados():
     print("✅ Dados de exemplo gerados!")
 
 # --- Inicialização do app ---
+
 if __name__ == '__main__':
+    print("📦 Iniciando app.py via Docker CMD...")
     with app.app_context():
         db.create_all()
         criar_usuario_admin_inicial()
-        inicializar_dados()
+        
 
     print("🚀 Sistema da Academia iniciado!")
     print("📱 Acesse: http://localhost:5000")
-    app.run(debug=(os.getenv('FLASK_DEBUG', '1') == '1'))
+    
+    # Para Docker, precisa bind em todas as interfaces
+    print("🚀 Flask prestes a iniciar...")
+    app.run(
+        host='0.0.0.0',  # Importante para Docker
+        port=5000,
+        debug=(os.getenv('FLASK_DEBUG', '0') == '1')
+    )
