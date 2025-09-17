@@ -1,4 +1,94 @@
-# Sistema Academia - Instalação via Docker
+# Documentação do Sistema de Gestão de Academia
+
+## 1. Visão Geral
+
+O sistema desenvolvido é uma aplicação web voltada para **gestão financeira e administrativa de uma academia**, com foco no controle de alunos, colaboradores e inadimplência. O acesso é restrito apenas aos administradores e colaboradores da academia, sem disponibilidade pública.
+
+A aplicação foi desenvolvida utilizando **Flask (Python)** no backend, **HTML/CSS/Bootstrap** no frontend e banco de dados relacional (**SQLite em desenvolvimento**, com possibilidade de migração para **MySQL em produção**).
+
+---
+
+## 2. Funcionalidades Principais
+
+### 2.1 Gestão de Usuários
+
+* Cadastro de administradores e colaboradores.
+* Login e autenticação de usuários.
+* Diferenciação de permissões:
+
+  * **Administrador**: acesso total ao sistema.
+  * **Colaborador**: restrição a algumas funcionalidades (por exemplo, não pode cadastrar novos usuários, mas pode gerenciar alunos).
+
+### 2.2 Gestão de Alunos
+
+* Cadastro de alunos com dados pessoais e financeiros.
+* Edição e exclusão de cadastros.
+* Acompanhamento de situação financeira dos alunos.
+
+### 2.3 Controle Financeiro
+
+* Registro de pagamentos.
+* Definição de status de alunos: **Em dia** ou **Inadimplente**.
+* Atualização automática de inadimplência quando o pagamento não é realizado na data estipulada.
+
+### 2.4 Dashboard
+
+* Exibição de informações gerais, incluindo:
+
+  * Total de alunos cadastrados.
+  * Quantidade de alunos em dia.
+  * Quantidade de inadimplentes.
+
+---
+
+## 3. Tecnologias Utilizadas
+
+* **Backend**: Flask (Python)
+* **Frontend**: HTML, CSS, Bootstrap
+* **Banco de Dados**: SQLite (desenvolvimento), MySQL (opção para produção)
+* **Controle de Dependências**: Feito através da containerização via Docker
+* **Hospedagem**: Execução local com Docker
+
+---
+
+## 4. Fluxo de Uso do Sistema
+
+1. O administrador acessa a tela de login.
+2. Após autenticação, é direcionado ao **dashboard**.
+3. Do dashboard, pode navegar para:
+
+   * Cadastro e gerenciamento de alunos.
+   * Cadastro e gerenciamento de colaboradores.
+   * Controle de pagamentos e inadimplência.
+4. O sistema atualiza automaticamente o status de cada aluno.
+5. O administrador pode visualizar os relatórios financeiros e acompanhar a saúde da academia.
+
+---
+
+## 5. Segurança
+
+* Senhas de usuários são armazenadas com hash (não em texto puro).
+* Sessões de login são gerenciadas com cookies seguros.
+* O acesso ao sistema é restrito apenas a usuários cadastrados.
+* Recomenda-se migrar o banco para MySQL em produção para maior segurança e confiabilidade.
+
+---
+
+## 6. Possíveis Melhorias Futuras
+
+* Implementação de relatórios em PDF.
+* Integração com sistemas de pagamento online.
+* Notificações por e-mail ou WhatsApp para alunos inadimplentes.
+* Implementação de logs de auditoria (quem fez o quê).
+* Migração definitiva para MySQL em produção.
+
+---
+
+## 7. Conclusão
+
+Este sistema atende às necessidades iniciais de controle financeiro da academia, oferecendo uma solução simples, de baixo custo e de fácil manutenção. Ele pode ser expandido conforme a demanda da academia crescer.
+
+## 8. Instalação via Docker
 
 ## Pré-requisitos
 
