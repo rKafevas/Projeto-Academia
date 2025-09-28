@@ -40,22 +40,11 @@
                 <strong>Total Esperado:</strong><br>
                 <span style="font-size: 1.5em; color: #ff9800;">R$ {{ "%.2f"|format(stats.valor_esperado) }}</span>
             </div>
-            <div style="background: #ffebee; padding: 15px; border-radius: 8px; border-left: 4px solid #f44336;">
-                <strong>Pendente:</strong><br>
-                <span style="font-size: 1.5em; color: #f44336;">R$ {{ "%.2f"|format(stats.valor_pendente) }}</span>
-            </div>
+            
         </div>
     </div>
 </div>
 
-<!-- Botões rápidos -->
-<div style="margin: 15px 0; text-align: center;">
-    <a href="{{ url_for('listar_clientes') }}" class="btn btn-primary me-2">
-        <i class="fas fa-users"></i> Todos os Clientes
-    </a>
-    <a href="{{ url_for('listar_clientes', filtro='inadimplentes') }}" class="btn btn-warning">
-        <i class="fas fa-exclamation-triangle"></i> Clientes Inadimplentes
-    </a>
-</div>
+
 
 {% endblock %}

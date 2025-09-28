@@ -16,6 +16,7 @@ A aplicação foi desenvolvida utilizando **Flask (Python)** no backend, **HTML/
 * Login e autenticação de usuários.
 * Diferenciação de permissões:
 
+
   * **Administrador**: acesso total ao sistema.
   * **Colaborador**: restrição a algumas funcionalidades (por exemplo, não pode cadastrar novos usuários, mas pode gerenciar alunos).
 

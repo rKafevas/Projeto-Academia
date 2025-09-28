@@ -31,7 +31,7 @@
 
         <div class="form-group">
             <label for="valor_mensalidade"><i class="fas fa-dollar-sign"></i> Valor da Mensalidade (R$):</label>
-            <input type="number" id="valor_mensalidade" name="valor_mensalidade" step="0.01" min="0" required placeholder="0.00">
+            <input type="number" id="valor_mensalidade" name="valor_mensalidade" step="0.01" min="0" max="200" required placeholder="0.00" oninput="limitarValor(this)">
         </div>
 
         <div class="form-group">
@@ -66,13 +66,82 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Formatação automática do telefone (opcional)
+    const telefone = document.getElementById('telefone');
+    
+    telefone.addEventListener('input', function(e) {
+        // Remove todos os caracteres não numéricos
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // Limita a 11 dígitos (formato: 11987654321)
+        if (value.length > 11) {
+            value = value.slice(0, 11);
+        }
+        
+        // Aplica a formatação
+        if (value.length <= 2) {
+            // Apenas os primeiros dígitos do DDD
+            e.target.value = value;
+        } else if (value.length <= 7) {
+            // DDD + parte do número
+            e.target.value = `(${value.slice(0,2)}) ${value.slice(2)}`;
+        } else {
+            // Formato completo: (11) 98765-4321
+            e.target.value = `(${value.slice(0,2)}) ${value.slice(2,7)}-${value.slice(7,11)}`;
+        }
+    });
+    
+    // Validação adicional no evento blur (quando sair do campo)
+    telefone.addEventListener('blur', function(e) {
+        const value = e.target.value.replace(/\D/g, '');
+        if (value.length > 0 && value.length < 10) {
+            alert('Número de telefone deve ter pelo menos 10 dígitos (DDD + número)');
+            e.target.focus();
+        }
+    });
+});
+
+function limitarValor(input) {
+    // Remove valores acima de 200
+    if (parseFloat(input.value) > 200) {
+        input.value = 200;
+    }
+    // Remove valores negativos
+    if (parseFloat(input.value) < 0) {
+        input.value = 0;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Script do telefone (já existente)
     const telefone = document.getElementById('telefone');
     telefone.addEventListener('input', function(e) {
         let value = e.target.value.replace(/\D/g, '');
-        if(value.length > 2) value = `(${value.slice(0,2)}) ${value.slice(2)}`;
-        if(value.length > 10) value = value.slice(0, 10 + 5); // limite
-        e.target.value = value;
+        if (value.length > 11) {
+            value = value.slice(0, 11);
+        }
+        if (value.length <= 2) {
+            e.target.value = value;
+        } else if (value.length <= 7) {
+            e.target.value = `(${value.slice(0,2)}) ${value.slice(2)}`;
+        } else {
+            e.target.value = `(${value.slice(0,2)}) ${value.slice(2,7)}-${value.slice(7,11)}`;
+        }
+    });
+    
+    // Validação do valor da mensalidade
+    const valorMensalidade = document.getElementById('valor_mensalidade');
+    valorMensalidade.addEventListener('blur', function(e) {
+        const valor = parseFloat(e.target.value);
+        if (valor > 200) {
+            alert('O valor máximo permitido é R$ 200,00');
+            e.target.value = 200;
+            e.target.focus();
+        }
+        if (valor < 0) {
+            alert('O valor não pode ser negativo');
+            e.target.value = 0;
+            e.target.focus();
+        }
     });
 });
 </script>

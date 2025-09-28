@@ -10,6 +10,7 @@ import pymysql
 import random
 import re
 import os
+import calendar
 import secrets
 from dotenv import load_dotenv
 from faker import Faker
@@ -269,11 +270,12 @@ def calcular_status_cliente(cliente):
     if not cliente.ativo:
         return "Inativo"
 
-    ultimo_pagamento = Pagamento.query.filter_by(
-        cliente_id=cliente.id
-    ).order_by(Pagamento.data_pagamento.desc()).first()
-
-    meses_atraso, _ = cliente.calcular_meses_atraso()
+    # Verifica se o cliente já fez algum pagamento
+    tem_pagamento = Pagamento.query.filter_by(cliente_id=cliente.id).first()
+    
+    # Se nunca pagou nada, está "Aguardando" (cliente novo)
+    if not tem_pagamento:
+        return "Aguardando"
 
     # Verifica se pagou o mês atual
     pagou_mes_atual = Pagamento.query.filter_by(
@@ -284,14 +286,25 @@ def calcular_status_cliente(cliente):
 
     if pagou_mes_atual:
         return "Em dia"
-    elif cliente.data_matricula.year == hoje.year and cliente.data_matricula.month == hoje.month:
-        return "Aguardando"
-    elif meses_atraso > 0:
+
+    # Calcula a data de vencimento do mês atual
+    try:
+        import calendar
+        ultimo_dia_mes = calendar.monthrange(hoje.year, hoje.month)[1]
+        dia_vencimento_mes = min(cliente.dia_vencimento, ultimo_dia_mes)
+        vencimento_atual = date(hoje.year, hoje.month, dia_vencimento_mes)
+    except:
+        vencimento_atual = date(hoje.year, hoje.month, 28)
+
+    # Se já tem histórico de pagamentos mas não pagou este mês
+    # e o vencimento já passou, está em atraso
+    if hoje > vencimento_atual:
         return "Em atraso"
-    elif not pagou_mes_atual and date(hoje.year, hoje.month, min(cliente.dia_vencimento, 28)) > hoje:
-        return "Aguardando"
-    else:
-        return "Em atraso"
+    
+    # Se o vencimento ainda não chegou mas já tem histórico de pagamentos
+    # tecnicamente ainda pode pagar no prazo, mas como já é cliente antigo
+    # que não pagou, considero em atraso (você pode ajustar essa lógica)
+    return "Em atraso"
 
 # --- Rotas de autenticação ---
 @app.route('/login', methods=['GET', 'POST'])
@@ -461,15 +474,72 @@ def ativar_usuario(usuario_id):
     flash(f'Usuário {usuario.nome_completo} foi ativado.', 'success')
     return redirect(url_for('gerenciar_usuarios'))
 
+# Substitua a função cadastrar_cliente() por esta versão:
+
 @app.route('/cadastrar_cliente', methods=['GET', 'POST'])
 @login_required
 def cadastrar_cliente():
+    print("=== FUNÇÃO CADASTRAR_CLIENTE EXECUTADA ===")
     if request.method == 'POST':
-        nome = request.form.get('nome')
-        telefone = request.form.get('telefone')
+        print("=== MÉTODO POST DETECTADO ===")
+        
+        nome = request.form.get('nome').strip()
+        telefone = request.form.get('telefone').strip()
         valor_mensalidade = float(request.form.get('valor_mensalidade'))
         dia_vencimento = int(request.form.get('dia_vencimento'))
 
+        # DEBUG: Mostrar dados recebidos
+        print(f"DEBUG - Dados recebidos:")
+        print(f"  Nome: '{nome}'")
+        print(f"  Telefone original: '{telefone}'")
+
+        # Limpa o telefone removendo formatação para comparação
+        telefone_limpo = re.sub(r'\D', '', telefone)
+        print(f"  Telefone limpo: '{telefone_limpo}'")
+        
+        # Validação de telefone
+        if len(telefone_limpo) < 10 or len(telefone_limpo) > 11:
+            flash('Telefone deve ter entre 10 e 11 dígitos.', 'error')
+            return render_template('cadastrar_cliente.html')
+        
+        # Validação de valor
+        if valor_mensalidade < 0 or valor_mensalidade > 999.99:
+            flash('O valor da mensalidade deve estar entre R$ 0,00 e R$ 999,99.', 'error')
+            return render_template('cadastrar_cliente.html')
+
+        # NOVA VALIDAÇÃO: Buscar TODOS os clientes ativos e comparar telefones
+        todos_clientes = Cliente.query.filter_by(ativo=True).all()
+        print(f"DEBUG - Total de clientes ativos: {len(todos_clientes)}")
+        
+        cliente_duplicado = None
+        for cliente in todos_clientes:
+            # Limpa o telefone do cliente existente
+            telefone_cliente_limpo = re.sub(r'\D', '', cliente.telefone)
+            print(f"  Comparando: '{telefone_limpo}' com '{telefone_cliente_limpo}' do cliente {cliente.nome}")
+            
+            if telefone_limpo == telefone_cliente_limpo:
+                cliente_duplicado = cliente
+                break
+        
+        if cliente_duplicado:
+            print(f"DEBUG - Cliente duplicado encontrado: {cliente_duplicado.nome}")
+            flash(f'Já existe um cliente ativo cadastrado com este telefone: {cliente_duplicado.nome}', 'error')
+            return render_template('cadastrar_cliente.html')
+        else:
+            print("DEBUG - Nenhum cliente duplicado encontrado")
+
+        # VALIDAÇÃO por nome (opcional)
+        cliente_existente_nome = Cliente.query.filter(
+            func.lower(Cliente.nome) == func.lower(nome),
+            Cliente.ativo == True
+        ).first()
+        
+        if cliente_existente_nome:
+            flash(f'Atenção: Já existe um cliente com nome similar: {cliente_existente_nome.nome}', 'warning')
+
+        print(f"DEBUG - Criando novo cliente...")
+        
+        # Se passou nas validações, cria o cliente
         novo_cliente = Cliente(
             nome=nome,
             telefone=telefone,
@@ -478,6 +548,8 @@ def cadastrar_cliente():
         )
         db.session.add(novo_cliente)
         db.session.commit()
+        
+        print(f"DEBUG - Cliente criado com ID: {novo_cliente.id}")
         flash(f'Cliente {nome} cadastrado com sucesso!', 'success')
         return redirect(url_for('listar_clientes'))
 
@@ -643,7 +715,7 @@ def dashboard():
         'clientes_atrasados': len(clientes_atrasados),
         'valor_recebido': valor_recebido,
         'valor_esperado': valor_total_esperado,
-        'valor_pendente': valor_total_esperado - valor_recebido,
+        'valor_pendente': max(0, valor_total_esperado - valor_recebido),
         'percentual_pagos': round((len(clientes_pagos) / total_clientes * 100) if total_clientes > 0 else 0, 1)
     }
 
